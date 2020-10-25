@@ -2,6 +2,8 @@ import 'package:dio/dio.dart';
 import 'dart:convert';
 
 Moedas welcomeFromJson(String str) => Moedas.fromJson(json.decode(str));
+List<String> nomes_disponiveis = ["dolar", "real", "euro"];
+Map disponiveis = {"dolar": "USD", "real": "BRL", "euro": "EUR"};
 
 String welcomeToJson(Moedas data) => json.encode(data.toJson());
 
@@ -14,8 +16,8 @@ class Moedas {
 
   factory Moedas.fromJson(Map<String, dynamic> json) => Moedas(
         base: json["base"],
-        rates: Map.from(json["rates"])
-            .map((k, v) => MapEntry<String, double>(k, v.toDouble())),
+        rates: Map.from(json["rates"]).map((k, v) =>
+            MapEntry<String, double>(k, double.parse((v).toStringAsFixed(2)))),
         date: DateTime.parse(json["date"]),
       );
 
@@ -28,7 +30,7 @@ class Moedas {
 }
 
 Future<Moedas> pegarConversion(String moeda) async {
-  var response = await Dio()
-      .get("https://api.exchangeratesapi.io/latest?base=${moeda}&symbols=BRL");
+  var response = await Dio().get(
+      "https://api.exchangeratesapi.io/latest?base=${disponiveis[moeda]}&symbols=BRL");
   return Moedas.fromJson(response.data);
 }
