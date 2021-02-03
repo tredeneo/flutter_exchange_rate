@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:table_calendar/table_calendar.dart';
+import 'package:date_field/date_field.dart';
+import 'package:intl/intl.dart';
 import 'api/moedas.dart';
 
 void main() {
@@ -15,7 +16,9 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
             primarySwatch: Colors.red,
             visualDensity: VisualDensity.adaptivePlatformDensity,
-            brightness: Brightness.dark),
+            brightness: Brightness.light),
+        darkTheme: ThemeData(brightness: Brightness.dark),
+        themeMode: ThemeMode.system,
         home: HomePage());
   }
 }
@@ -31,24 +34,42 @@ var tema;
 
 class HomePageState extends State<HomePage> {
   Future<Moedas> futureMoedas;
-  String valoresEntrada, valoresSalida;
-  CalendarController calendario;
+  String valoresSalida;
+  DateTime selectedDate;
+  //CalendarController calendario;
   void initState() {
     super.initState();
-    valoresEntrada = nomesDisponiveis[0];
+    selectedDate = DateTime.now();
     valoresSalida = nomesDisponiveis[1];
-    futureMoedas = pegarConversion(valoresEntrada, valoresSalida);
-    calendario = CalendarController();
+    futureMoedas = pegarConversion(valoresSalida, selectedDate);
+    //calendario = CalendarController();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: Text("conversor")),
-        body: Container(
-            child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: <Widget>[
+        body: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: <Widget>[
+              Container(
+                width: MediaQuery.of(context).size.width / 4,
+                child: DateTimeField(
+                  decoration:
+                      const InputDecoration(hintText: 'selecione a data'),
+                  selectedDate: selectedDate,
+                  dateFormat: DateFormat.yMd(),
+                  lastDate: DateTime.now(),
+                  onDateSelected: (DateTime value) {
+                    setState(() {
+                      selectedDate = value;
+                      futureMoedas =
+                          pegarConversion(valoresSalida, selectedDate);
+                    });
+                  },
+                  mode: DateTimeFieldPickerMode.date,
+                ),
+              ),
               Container(
                   child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -60,8 +81,8 @@ class HomePageState extends State<HomePage> {
                           onChanged: (String newValue) {
                             setState(() {
                               valoresSalida = newValue;
-                              futureMoedas = pegarConversion(
-                                  valoresEntrada, valoresSalida);
+                              futureMoedas =
+                                  pegarConversion(valoresSalida, selectedDate);
                             });
                           },
                           items: nomesDisponiveis
@@ -69,68 +90,37 @@ class HomePageState extends State<HomePage> {
                             return DropdownMenuItem<String>(
                                 value: value, child: Text(value));
                           }).toList())),
-                  Flexible(
-                      child: DropdownButton(
-                    value: valoresEntrada,
-                    style: TextStyle(color: Colors.white, fontSize: 30),
-                    onChanged: (String newValue) {
-                      setState(() {
-                        valoresEntrada = newValue;
-                        futureMoedas =
-                            pegarConversion(valoresEntrada, valoresSalida);
-                      });
-                    },
-                    items: nomesDisponiveis.map((String value) {
-                      return DropdownMenuItem<String>(
-                          value: value, child: Text(value));
-                    }).toList(),
-                  )),
-                  Flexible(
-                      child: TableCalendar(
-                    startDay: DateTime.now(),
-                    calendarController: calendario,
-                    startingDayOfWeek: StartingDayOfWeek.sunday,
-                  ))
                 ],
               )),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Flexible(
-                    child: TextField(
-                      maxLength: 10,
-                      maxLengthEnforced: true,
-                      obscureText: true,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        labelText: 'Passwodsadsadasdrd',
-                      ),
-                    ),
+              Container(
+                width: MediaQuery.of(context).size.width / 4,
+                child: TextField(
+                  keyboardType: TextInputType.number,
+                  maxLength: 10,
+                  obscureText: false,
+                  decoration: InputDecoration(
+                    border: OutlineInputBorder(),
+                    labelText: 'quantidade',
                   ),
-                  Flexible(child: Text("teste"))
-                ],
-              ),
-              Center(
-                child: FutureBuilder<Moedas>(
-                  future: futureMoedas,
-                  builder: (context, snapshot) {
-                    if (snapshot.hasData) {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("$valoresSalida",
-                              style: TextStyle(fontSize: 30)),
-                          Icon(Icons.arrow_forward_sharp),
-                          Text(valoresEntrada, style: TextStyle(fontSize: 30)),
-                          Text(":${snapshot.data.rates.values}",
-                              style: TextStyle(fontSize: 30)),
-                        ],
-                      );
-                    }
-                    return CircularProgressIndicator();
-                  },
                 ),
               ),
-            ])));
+              Expanded(
+                child: Center(
+                  child: FutureBuilder(
+                      future: futureMoedas,
+                      builder: (context, AsyncSnapshot<Moedas> snapshot) {
+                        return ListView.builder(
+                            itemCount: snapshot.data.rates.length,
+                            itemBuilder: (context, index) {
+                              return ListTile(
+                                  title: Text(snapshot.data.rates.keys
+                                      .elementAt(index)),
+                                  subtitle: Text(
+                                      "${(1 / snapshot.data.rates.values.elementAt(index)).toStringAsFixed(3)}"));
+                            });
+                      }),
+                ),
+              )
+            ]));
   }
 }

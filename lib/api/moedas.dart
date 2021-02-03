@@ -30,8 +30,8 @@ class Moedas {
       };
 }
 
-Future<Moedas> pegarConversion(String entrada, String salida) async {
+Future<Moedas> pegarConversion(String entrada, DateTime data) async {
   var response = await Dio().get(
-      "https://api.exchangeratesapi.io/latest?base=${disponiveis[salida]}&symbols=${disponiveis[entrada]}");
+      "https://api.exchangeratesapi.io/${data.year}-${data.month}-${data.day}?base=${disponiveis[entrada]}");
   return Moedas.fromJson(response.data);
 }
