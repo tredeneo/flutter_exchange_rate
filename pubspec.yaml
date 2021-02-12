@@ -24,7 +24,6 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^3.0.10
-  table_calendar: ^2.3.1
   date_field: ^1.0.4
 
 

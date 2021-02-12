@@ -42,15 +42,14 @@ class HomePageState extends State<HomePage> {
     selectedDate = DateTime.now();
     valoresSalida = nomesDisponiveis[1];
     futureMoedas = pegarConversion(valoresSalida, selectedDate);
-    //calendario = CalendarController();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: Text("conversor")),
-        body: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        body: ListView(
+            //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               Container(
                 width: MediaQuery.of(context).size.width / 4,
@@ -70,30 +69,33 @@ class HomePageState extends State<HomePage> {
                   mode: DateTimeFieldPickerMode.date,
                 ),
               ),
+              Center(
+                child: Container(
+                    child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(
+                        child: DropdownButton<String>(
+                            value: valoresSalida,
+                            style: TextStyle(color: Colors.white, fontSize: 30),
+                            onChanged: (String newValue) {
+                              setState(() {
+                                valoresSalida = newValue;
+                                futureMoedas = pegarConversion(
+                                    valoresSalida, selectedDate);
+                              });
+                            },
+                            items: nomesDisponiveis
+                                .map<DropdownMenuItem<String>>((String value) {
+                              return DropdownMenuItem<String>(
+                                  value: value, child: Text(value));
+                            }).toList())),
+                  ],
+                )),
+              ),
               Container(
-                  child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  Flexible(
-                      child: DropdownButton<String>(
-                          value: valoresSalida,
-                          style: TextStyle(color: Colors.white, fontSize: 30),
-                          onChanged: (String newValue) {
-                            setState(() {
-                              valoresSalida = newValue;
-                              futureMoedas =
-                                  pegarConversion(valoresSalida, selectedDate);
-                            });
-                          },
-                          items: nomesDisponiveis
-                              .map<DropdownMenuItem<String>>((String value) {
-                            return DropdownMenuItem<String>(
-                                value: value, child: Text(value));
-                          }).toList())),
-                ],
-              )),
-              Container(
-                width: MediaQuery.of(context).size.width / 4,
+                alignment: Alignment.center,
+                //width: MediaQuery.of(context).size.width / 4,
                 child: TextField(
                   keyboardType: TextInputType.number,
                   maxLength: 10,
@@ -104,23 +106,31 @@ class HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-              Expanded(
-                child: Center(
-                  child: FutureBuilder(
-                      future: futureMoedas,
-                      builder: (context, AsyncSnapshot<Moedas> snapshot) {
-                        return ListView.builder(
-                            itemCount: snapshot.data.rates.length,
-                            itemBuilder: (context, index) {
-                              return ListTile(
-                                  title: Text(snapshot.data.rates.keys
-                                      .elementAt(index)),
-                                  subtitle: Text(
-                                      "${(1 / snapshot.data.rates.values.elementAt(index)).toStringAsFixed(3)}"));
-                            });
-                      }),
-                ),
-              )
+              FutureBuilder(
+                  future: futureMoedas,
+                  builder: (context, AsyncSnapshot<Moedas> snapshot) {
+                    if (snapshot.hasData) {
+                      return buildListView(snapshot);
+                    } else {
+                      return LinearProgressIndicator();
+                    }
+                  })
             ]));
+  }
+
+  ListView buildListView(AsyncSnapshot<Moedas> snapshot) {
+    return ListView.builder(
+        shrinkWrap: true,
+        itemCount: snapshot.data.rates.length,
+        itemBuilder: (context, index) {
+          return ListTile(
+              title: Center(
+                child: Text(snapshot.data.rates.keys.elementAt(index)),
+              ),
+              subtitle: Center(
+                child: Text(
+                    "${(1 / snapshot.data.rates.values.elementAt(index)).toStringAsFixed(3)}"),
+              ));
+        });
   }
 }
